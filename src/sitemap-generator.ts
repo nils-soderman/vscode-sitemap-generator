@@ -6,9 +6,9 @@ import * as settings from './settings';
 import { XmlWriter } from "./xmlWriter";
 
 interface SitemapFileData {
-    Url:string,
-    LastMod:string,
-    Depth:number
+    Url: string,
+    LastMod: string,
+    Depth: number
 }
 
 export function GetWorkspaceFolder() {
@@ -19,10 +19,17 @@ export function GetWorkspaceFolder() {
 
 function GetSitemapData(Settings: settings.SitemapSettings) {
     let MaxDepth = -1;
-    let FilesData:SitemapFileData[] = [];
-    const NumberOfSlashesRE = new RegExp("\\" + path.sep, "g");
+    let FilesData: SitemapFileData[] = [];
+    const PathSlashesRE = new RegExp("\\" + path.sep, "g");
+    const FwdSlashRE = new RegExp("/", "g");
     if (Settings.Root === undefined)
-        return {Files: FilesData, MaxDepth: MaxDepth};
+        return { Files: FilesData, MaxDepth: MaxDepth };
+
+    let ExcludePatterns: RegExp[] = [];
+    Settings.Exclude?.forEach(Pattern => {
+        console.log("Pattern: " + Pattern);
+        ExcludePatterns.push(new RegExp(Pattern));
+    });
 
     const AbsRootDir = path.join(GetWorkspaceFolder(), Settings.Root);
 
@@ -37,14 +44,20 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
                     return;
 
                 // If file is not under a subfolder, add it to the beginning of the array
-                const RelativeFilepath = path.relative(AbsRootDir, Filepath);
-                const Depth = (RelativeFilepath.match(NumberOfSlashesRE)||[]).length;
+                const RelativeFilepath = path.relative(AbsRootDir, Filepath).replace(PathSlashesRE, "/");
+
+                for (const Pattern of ExcludePatterns) {
+                    if (RelativeFilepath.search(Pattern) !== -1)
+                        return;
+                }
+
+                const Url = GetWebUrlFromFilepath(Settings, RelativeFilepath);
+                const Depth = (Url.slice(0, -1).match(FwdSlashRE) || [0, 0]).length - 2;
                 if (Depth > MaxDepth)
                     MaxDepth = Depth;
-                
-                
-                const Data:SitemapFileData = {
-                    Url: GetWebUrlFromFilepath(Settings, Filepath),
+
+                const Data: SitemapFileData = {
+                    Url: Url,
                     LastMod: fs.statSync(Filepath).mtime.toLocaleDateString(),
                     Depth: Depth
                 };
@@ -57,34 +70,29 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
     }
 
     _GetFilesRecursivly(AbsRootDir);
-    
-    return {Files: FilesData, MaxDepth: MaxDepth};
+
+    return { Files: FilesData, MaxDepth: MaxDepth };
 }
 
-function GetWebUrlFromFilepath(SitemapSettings: settings.SitemapSettings, Filepath: string) {
-    if (SitemapSettings.Root === undefined)
-        return "";
-    let AbsRootPath = path.join(GetWorkspaceFolder(), SitemapSettings.Root);
-    Filepath = Filepath.replace(AbsRootPath, "").substr(1);
-
-    const FileBaseName = path.basename(Filepath, path.extname(Filepath));
+function GetWebUrlFromFilepath(SitemapSettings: settings.SitemapSettings, RelativeFilepath: string) {
+    const FileBaseName = path.basename(RelativeFilepath, path.extname(RelativeFilepath));
     if (SitemapSettings.bRemoveFileExtentions)
-        Filepath = path.join(path.dirname(Filepath), FileBaseName);
+        RelativeFilepath = path.join(path.dirname(RelativeFilepath), FileBaseName);
 
     if (FileBaseName.toLowerCase() === "index") {
-        Filepath = path.dirname(Filepath);
-        if (Filepath === ".")
-            Filepath = "";
+        RelativeFilepath = path.dirname(RelativeFilepath);
+        if (RelativeFilepath === ".")
+            RelativeFilepath = "";
     }
 
-    if (Filepath)
-        Filepath = "/" + Filepath;
+    if (RelativeFilepath)
+        RelativeFilepath = "/" + RelativeFilepath;
 
     let Url = `${SitemapSettings.Protocol}://`;
     if (SitemapSettings.bIncludeWWW)
         Url += "www.";
-    Url += SitemapSettings.DomainName + Filepath;
-    if (SitemapSettings.bUseTrailingSlash && Filepath)
+    Url += SitemapSettings.DomainName + RelativeFilepath;
+    if (SitemapSettings.bUseTrailingSlash && RelativeFilepath)
         Url += "/";
 
     return Url;
@@ -121,7 +129,7 @@ function AddSitemapEntry(SitemapWriter: XmlWriter, Loc: string, Lastmod: string,
     SitemapWriter.CloseTag();
 
     SitemapWriter.OpenTag("priority");
-    SitemapWriter.WriteContent(Priority.toString());
+    SitemapWriter.WriteContent(Priority.toFixed(2));
     SitemapWriter.CloseTag();
 
     SitemapWriter.CloseTag();
