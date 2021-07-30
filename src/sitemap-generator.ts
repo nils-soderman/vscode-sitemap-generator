@@ -11,11 +11,18 @@ interface SitemapFileData {
     Depth: number
 }
 
+
 export function GetWorkspaceFolder() {
     if (!vscode.workspace.workspaceFolders)
         return "";
     return vscode.workspace.workspaceFolders[0].uri.fsPath;
 }
+
+
+function GetUrlDepthValue(Url: string) {
+    return (Url.slice(0, -1).match(/\//g) || [0, 0]).length - 2;
+}
+
 
 function GetSitemapData(Settings: settings.SitemapSettings) {
     let MaxDepth = -1;
@@ -27,11 +34,10 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
 
     let ExcludePatterns: RegExp[] = [];
     Settings.Exclude?.forEach(Pattern => {
-        console.log("Pattern: " + Pattern);
         ExcludePatterns.push(new RegExp(Pattern));
     });
 
-    const AbsRootDir = path.join(GetWorkspaceFolder(), Settings.Root);
+    const AbsRootDir = path.posix.join(GetWorkspaceFolder(), Settings.Root);
 
     function _GetFilesRecursivly(Directory: string) {
         fs.readdirSync(Directory).forEach((File: string) => {
@@ -52,19 +58,15 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
                 }
 
                 const Url = GetWebUrlFromFilepath(Settings, RelativeFilepath);
-                const Depth = (Url.slice(0, -1).match(FwdSlashRE) || [0, 0]).length - 2;
+                const Depth = GetUrlDepthValue(Url);
                 if (Depth > MaxDepth)
                     MaxDepth = Depth;
 
-                const Data: SitemapFileData = {
+                return FilesData.push({
                     Url: Url,
                     LastMod: fs.statSync(Filepath).mtime,
                     Depth: Depth
-                };
-
-                if (!Depth) // Remove once prio sorting is in
-                    return FilesData.unshift(Data);
-                return FilesData.push(Data);
+                });
             }
         });
     }
@@ -74,40 +76,50 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
     return { Files: FilesData, MaxDepth: MaxDepth };
 }
 
-function GetWebUrlFromFilepath(SitemapSettings: settings.SitemapSettings, RelativeFilepath: string) {
-    const FileBaseName = path.basename(RelativeFilepath, path.extname(RelativeFilepath));
+
+function GetWebUrlFromFilepath(SitemapSettings: settings.SitemapSettings, Filepath: string) {
+    if (path.isAbsolute(Filepath)) {
+        Filepath = path.relative(GetWorkspaceFolder(), Filepath).replace(/\\/g, "/");
+    }
+    const FileBaseName = path.basename(Filepath, path.extname(Filepath));
     if (SitemapSettings.bRemoveFileExtentions)
-        RelativeFilepath = path.posix.join(path.posix.dirname(RelativeFilepath), FileBaseName);
+        Filepath = path.posix.join(path.posix.dirname(Filepath), FileBaseName);
 
     if (FileBaseName.toLowerCase() === "index") {
-        RelativeFilepath = path.posix.dirname(RelativeFilepath);
-        if (RelativeFilepath === ".")
-            RelativeFilepath = "";
+        Filepath = path.posix.dirname(Filepath);
+        if (Filepath === ".")
+            Filepath = "";
     }
 
-    if (RelativeFilepath)
-        RelativeFilepath = "/" + RelativeFilepath;
+    if (Filepath)
+        Filepath = "/" + Filepath;
 
     let Url = `${SitemapSettings.Protocol}://`;
     if (SitemapSettings.bIncludeWWW)
         Url += "www.";
-    Url += SitemapSettings.DomainName + RelativeFilepath;
-    if (SitemapSettings.bUseTrailingSlash && RelativeFilepath)
+    Url += SitemapSettings.DomainName + Filepath;
+    if (SitemapSettings.bUseTrailingSlash && Filepath)
         Url += "/";
 
     return Url;
 }
 
+
+function CalculatePrio(UrlDepth: number, MaxDepth: number) {
+    return 1 - (UrlDepth / (MaxDepth + 1));
+}
+
+
 export function GenerateSiteMap(Sitemap: string) {
     const SitemapSettings = settings.GetSitemapSettings(Sitemap);
-    
+
     const SitemapData = GetSitemapData(SitemapSettings);
-    
+
     const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
-    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, false);
 
     SitemapData.Files.forEach(FileData => {
-        const Depth = 1 - (FileData.Depth / (SitemapData.MaxDepth + 1));
+        const Depth = CalculatePrio(FileData.Depth, SitemapData.MaxDepth);
         SitemapWriter.AddItem(FileData.Url, FileData.LastMod, Depth);
     });
 
@@ -115,4 +127,51 @@ export function GenerateSiteMap(Sitemap: string) {
 
     return AbsoluteSitemapPath;
 
+}
+
+
+// Auto Updater
+export function OnFileAdded(Sitemap: string, Filepath: string) {
+    const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
+    const SitemapSettings = settings.GetSitemapSettings(Sitemap);
+    const Url = GetWebUrlFromFilepath(SitemapSettings, Filepath);
+    SitemapWriter.AddItem(
+        Url,
+        new Date(),
+        CalculatePrio(GetUrlDepthValue(Url), SitemapWriter.GetCurrentMaxDepth())
+    );
+    SitemapWriter.Write();
+}
+
+
+export function OnFileSaved(Sitemap: string, Filepath: string) {
+    const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
+    const Url = GetWebUrlFromFilepath(settings.GetSitemapSettings(Sitemap), Filepath);
+    const Item = SitemapWriter.GetItem(Url);
+    Item.LastMod = new Date(); // Update last modified to today
+    SitemapWriter.Write();
+}
+
+
+export function OnFileRemoved(Sitemap: string, Filepath: string) {
+    const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
+    const Url = GetWebUrlFromFilepath(settings.GetSitemapSettings(Sitemap), Filepath);
+    SitemapWriter.RemoveItem(Url);
+    SitemapWriter.Write();
+}
+
+
+export function OnFileRenamed(Sitemap:string, OldFilepath: string, NewFilePath: string) {
+    const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
+    const SitemapSettings = settings.GetSitemapSettings(Sitemap);
+    const OldUrl = GetWebUrlFromFilepath(SitemapSettings, OldFilepath);
+    const NewUrl = GetWebUrlFromFilepath(SitemapSettings, NewFilePath);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
+    const OldItem = SitemapWriter.GetItem(OldUrl);
+    SitemapWriter.AddItem(NewUrl, new Date(), OldItem.Prio);
+    SitemapWriter.RemoveItem(OldUrl);
+    SitemapWriter.Write();
 }

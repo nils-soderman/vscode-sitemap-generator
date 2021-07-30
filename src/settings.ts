@@ -16,6 +16,7 @@ export interface SitemapSettings {
     bUseTrailingSlash?: boolean
 }
 
+
 export const DEFAULT_SETTINGS: SitemapSettings = {
     Protocol: "http",
     DomainName: "example.com",
@@ -29,20 +30,53 @@ export const DEFAULT_SETTINGS: SitemapSettings = {
 };
 
 
-export function GetSitemaps() {
-    const Filepath = EnsureSettingsFile();
-    const Data = JSON.parse(fs.readFileSync(Filepath, "utf8"));
-    return Object.keys(Data);
+export function IsSettingsFile(Filepath: string) {
+    return Filepath.endsWith(path.join(".vscode", SETTINGS_FILENAME));
 }
+
+
+export function GetSettingsFilepath(bEnsureFileExists = false) {
+    let Filepath = "";
+    if (vscode.workspace.workspaceFolders)
+        Filepath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, ".vscode", SETTINGS_FILENAME);
+    else {
+        vscode.window.showErrorMessage("No workspace open! :(");
+        return "";
+    }
+    // TODO: this could probably be removed.
+    if (bEnsureFileExists && !fs.existsSync(Filepath))
+        fs.writeFileSync(Filepath, "{}");
+
+    return Filepath;
+}
+
+
+export function ReadSettings() {
+    const Filepath = GetSettingsFilepath();
+    if (!fs.existsSync(Filepath))
+        return {};
+    return JSON.parse(fs.readFileSync(Filepath, "utf8"));
+}
+
+
+function WriteSettings(Data: any) {
+    const Filepath = GetSettingsFilepath();
+    fs.writeFileSync(Filepath, JSON.stringify(Data, undefined, 2));
+}
+
+
+export function GetSitemaps() {
+    return Object.keys(ReadSettings());
+}
+
 
 /**
  * 
  * @param Sitemap 
  * @returns 
  */
-export function GetSitemapSettings(Sitemap: string): SitemapSettings {
-    const Filepath = EnsureSettingsFile();
-    const Data = JSON.parse(fs.readFileSync(Filepath, "utf8"));
+export function GetSitemapSettings(Sitemap: string, CachedSettings?:any): SitemapSettings {
+    const Data = (CachedSettings) ? CachedSettings : ReadSettings();
     if (!Data[Sitemap]) {
         WriteDefaultSitemapSettings(Sitemap);
         return DEFAULT_SETTINGS;
@@ -65,47 +99,17 @@ export function GetSitemapSettings(Sitemap: string): SitemapSettings {
 
 
 export function SetSitemapSetting(Sitemap: string, Settings: SitemapSettings): SitemapSettings {
-    const Filepath = EnsureSettingsFile();
-    const Data = JSON.parse(fs.readFileSync(Filepath, "utf8"));
+    const Data = ReadSettings();
     if (!Data[Sitemap])
         Data[Sitemap] = DEFAULT_SETTINGS;
     Object.assign(Data[Sitemap], Settings);
-    fs.writeFileSync(Filepath, JSON.stringify(Data, undefined, 2));
+    WriteSettings(Data);
     return Data;
 }
 
 
 async function WriteDefaultSitemapSettings(Sitemap: string) {
-    const Filepath = EnsureSettingsFile();
-    const Data = JSON.parse(fs.readFileSync(Filepath, "utf8"));
+    const Data = ReadSettings();
     Data[Sitemap] = DEFAULT_SETTINGS;
-    fs.writeFileSync(Filepath, JSON.stringify(Data, undefined, 2));
-}
-
-/**
- * Makes sure a .json sitemap settings file exists.
- * @returns Filepath to the settings file.
- */
-function EnsureSettingsFile() {
-    const Filepath = GetSettingsFilepath();
-
-    if (!fs.existsSync(Filepath))
-        fs.writeFileSync(Filepath, "{}");
-
-    return Filepath;
-}
-
-export function GetSettingsFilepath() {
-    let Filepath = "";
-    if (vscode.workspace.workspaceFolders)
-        Filepath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, ".vscode", SETTINGS_FILENAME);
-    else {
-        vscode.window.showErrorMessage("No workspace open! :(");
-        return "";
-    }
-    return Filepath;
-}
-
-export function IsSettingsFile(Filepath:string) {
-    return Filepath.endsWith(path.join(".vscode", SETTINGS_FILENAME));
+    WriteSettings(Data);
 }
