@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-const DEFAULT_HEADER = '<?xml version="1.0" encoding="UTF-8"?>';
+const DEFAULT_HEADER = `<?xml version="1.0" encoding="UTF-8"?>`;
 
 function GetTagString(Tag: string, Content: string) {
     return `<${Tag}>${Content}</${Tag}>`;
@@ -14,7 +14,7 @@ class SitemapUrl {
 
     GetString() {
         let Content = "";
-        Content += "\n\t";
+        Content += "\n    ";
         for (let Item of [
             ["loc", this.Loc],
             ["priority", this.Prio?.toFixed(2)],
@@ -23,9 +23,9 @@ class SitemapUrl {
             if (Item[0] === undefined || Item[1] === undefined)
                 continue;
             Content += GetTagString(Item[0], Item[1]);
-            Content += "\n\t";
+            Content += "\n    ";
         }
-        Content = Content.trimEnd() + "\n";
+        Content = Content.trimEnd() + "\n  ";
         return GetTagString("url", Content);
     }
 
@@ -82,16 +82,20 @@ export class SitemapXmlWriter {
 
     Write(bMinimized = false) {
         let Content = DEFAULT_HEADER;
-        Content += "\n";
+        Content += `\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+        
+        
 
         // Sort urls list by prio
         this.Urls.sort((a, b) => ((a.Prio ? a.Prio : 0) < (b.Prio ? b.Prio : 0)) ? 1 : -1);
 
         // Add all urls
         this.Urls.forEach(Url => {
-            Content += Url.GetString();
+            Content += "  " + Url.GetString();
             Content += "\n";
         });
+
+        Content += "</urlset>";
 
         if (bMinimized)
             Content = Content.replace(/\s*/g, "");

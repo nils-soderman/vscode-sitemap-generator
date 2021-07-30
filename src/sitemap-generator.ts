@@ -98,7 +98,7 @@ function GetWebUrlFromFilepath(SitemapSettings: settings.SitemapSettings, Filepa
     if (SitemapSettings.bIncludeWWW)
         Url += "www.";
     Url += SitemapSettings.DomainName + Filepath;
-    if (SitemapSettings.bUseTrailingSlash && Filepath)
+    if (SitemapSettings.bUseTrailingSlash && Filepath && !Filepath.includes("."))
         Url += "/";
 
     return Url;
@@ -123,7 +123,7 @@ export function GenerateSiteMap(Sitemap: string) {
         SitemapWriter.AddItem(FileData.Url, FileData.LastMod, Depth);
     });
 
-    SitemapWriter.Write();
+    SitemapWriter.Write(SitemapSettings.bMinimized);
 
     return AbsoluteSitemapPath;
 
@@ -141,26 +141,28 @@ export function OnFileAdded(Sitemap: string, Filepath: string) {
         new Date(),
         CalculatePrio(GetUrlDepthValue(Url), SitemapWriter.GetCurrentMaxDepth())
     );
-    SitemapWriter.Write();
+    SitemapWriter.Write(SitemapSettings.bMinimized);
 }
 
 
 export function OnFileSaved(Sitemap: string, Filepath: string) {
     const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
     const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
-    const Url = GetWebUrlFromFilepath(settings.GetSitemapSettings(Sitemap), Filepath);
+    const SitemapSettings = settings.GetSitemapSettings(Sitemap);
+    const Url = GetWebUrlFromFilepath(SitemapSettings, Filepath);
     const Item = SitemapWriter.GetItem(Url);
     Item.LastMod = new Date(); // Update last modified to today
-    SitemapWriter.Write();
+    SitemapWriter.Write(SitemapSettings.bMinimized);
 }
 
 
 export function OnFileRemoved(Sitemap: string, Filepath: string) {
     const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
     const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
-    const Url = GetWebUrlFromFilepath(settings.GetSitemapSettings(Sitemap), Filepath);
+    const SitemapSettings = settings.GetSitemapSettings(Sitemap);
+    const Url = GetWebUrlFromFilepath(SitemapSettings, Filepath);
     SitemapWriter.RemoveItem(Url);
-    SitemapWriter.Write();
+    SitemapWriter.Write(SitemapSettings.bMinimized);
 }
 
 
@@ -173,5 +175,5 @@ export function OnFileRenamed(Sitemap:string, OldFilepath: string, NewFilePath: 
     const OldItem = SitemapWriter.GetItem(OldUrl);
     SitemapWriter.AddItem(NewUrl, new Date(), OldItem.Prio);
     SitemapWriter.RemoveItem(OldUrl);
-    SitemapWriter.Write();
+    SitemapWriter.Write(SitemapSettings.bMinimized);
 }

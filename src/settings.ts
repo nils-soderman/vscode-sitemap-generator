@@ -13,7 +13,8 @@ export interface SitemapSettings {
     bIncludeWWW?: boolean,
     bRemoveFileExtentions?: boolean,
     bAutomaticallyUpdateSitemap?: boolean,
-    bUseTrailingSlash?: boolean
+    bUseTrailingSlash?: boolean,
+    bMinimized?: boolean
 }
 
 
@@ -26,7 +27,8 @@ export const DEFAULT_SETTINGS: SitemapSettings = {
     bIncludeWWW: true,
     bRemoveFileExtentions: false,
     bUseTrailingSlash: false,
-    bAutomaticallyUpdateSitemap: true
+    bAutomaticallyUpdateSitemap: true,
+    bMinimized: false
 };
 
 
