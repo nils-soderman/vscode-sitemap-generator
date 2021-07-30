@@ -29,6 +29,12 @@ export const DEFAULT_SETTINGS: SitemapSettings = {
 };
 
 
+export function GetSitemaps() {
+    const Filepath = EnsureSettingsFile();
+    const Data = JSON.parse(fs.readFileSync(Filepath, "utf8"));
+    return Object.keys(Data);
+}
+
 /**
  * 
  * @param Sitemap 
@@ -81,6 +87,15 @@ async function WriteDefaultSitemapSettings(Sitemap: string) {
  * @returns Filepath to the settings file.
  */
 function EnsureSettingsFile() {
+    const Filepath = GetSettingsFilepath();
+
+    if (!fs.existsSync(Filepath))
+        fs.writeFileSync(Filepath, "{}");
+
+    return Filepath;
+}
+
+export function GetSettingsFilepath() {
     let Filepath = "";
     if (vscode.workspace.workspaceFolders)
         Filepath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, ".vscode", SETTINGS_FILENAME);
@@ -88,9 +103,9 @@ function EnsureSettingsFile() {
         vscode.window.showErrorMessage("No workspace open! :(");
         return "";
     }
-
-    if (!fs.existsSync(Filepath))
-        fs.writeFileSync(Filepath, "{}");
-
     return Filepath;
+}
+
+export function IsSettingsFile(Filepath:string) {
+    return Filepath.endsWith(path.join(".vscode", SETTINGS_FILENAME));
 }

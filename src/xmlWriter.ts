@@ -2,48 +2,68 @@ import * as fs from 'fs';
 
 const DEFAULT_HEADER = '<?xml version="1.0" encoding="UTF-8"?>';
 
-export class XmlWriter {
-    _OpenTags:string[] = [];
-    _Content = "";
-    bMinimized = false;
-    Filename = "";
-    _bCurrentlyEmptyTag = false;
+function GetTagString(Tag: string, Content: string) {
+    return `<${Tag}>${Content}</${Tag}>`;
+}
 
-    constructor (Filename:string) {
-        this.Filename = Filename;
-        this._Content = DEFAULT_HEADER + "\n";
+class SitemapUrl {
+    constructor(public Loc: string, public LastMod: Date, public Prio: number) {
+
     }
 
-    OpenTag(TagName: string) {
-        this._OpenTags.push(TagName);
-        if (!this.bMinimized)
-            if (this._bCurrentlyEmptyTag)
-                this._Content += "\n";
-            this._Content += Array(this._OpenTags.length).join('\t');
-        this._Content += `<${TagName}>`;
-        this._bCurrentlyEmptyTag = true;
+    GetString() {
+        let Content = "";
+        Content += "\n\t";
+        for (let Item of [
+            ["loc", this.Loc],
+            ["priority", this.Prio.toFixed(2)],
+            ["lastmod", this.LastMod.toLocaleDateString()]
+        ]) {
+            Content += GetTagString(Item[0], Item[1]);
+            Content += "\n\t";
+        }
+        Content = Content.trimEnd() + "\n";
+        return GetTagString("url", Content);
     }
 
-    WriteContent(Text:string) {
-        this._Content += Text;
-        this._bCurrentlyEmptyTag = false;
+
+
+}
+
+export class SitemapXmlWriter {
+    Header = "";
+    Urls: SitemapUrl[] = [];
+
+    constructor(public readonly Filepath: string) {
+        if (!fs.statSync(Filepath).isFile())
+            return;
+        this._ParseContent(fs.readFileSync(Filepath));
     }
 
-    CloseTag() {
-        const LastTag = this._OpenTags[this._OpenTags.length - 1];
-        this._OpenTags.pop();
-        this._Content += `</${LastTag}>`;
-        if (!this.bMinimized)
-            this._Content += "\n";
-        this._bCurrentlyEmptyTag = false;
+    AddItem(Loc: string, LastMod: Date, Prio: number) {
+        this.Urls.push(new SitemapUrl(Loc, LastMod, Prio));
     }
 
-    Minimize() {
-        this._Content = this._Content.replace(/>\s*</g, "><");
+    _ParseContent(Content: Buffer) {
     }
 
-    WriteFile() {
-        fs.writeFileSync(this.Filename, this._Content, { "encoding": "utf8" });
+    Write(bMinimized = false) {
+        let Content = DEFAULT_HEADER;
+        Content += "\n";
+
+        // Sort urls list by prio
+        this.Urls.sort((a, b) => (a.Prio < b.Prio) ? 1 : -1);
+
+        // Add all urls
+        this.Urls.forEach(Url => {
+            Content += Url.GetString();
+            Content += "\n";
+        });
+
+        if (bMinimized)
+            Content = Content.replace(/\s*/g, "");
+
+        fs.writeFileSync(this.Filepath, Content, { "encoding": "utf8" });
     }
 
 }

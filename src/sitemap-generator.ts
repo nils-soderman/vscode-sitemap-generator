@@ -3,11 +3,11 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import * as settings from './settings';
-import { XmlWriter } from "./xmlWriter";
+import { SitemapXmlWriter } from "./xmlWriter";
 
 interface SitemapFileData {
     Url: string,
-    LastMod: string,
+    LastMod: Date,
     Depth: number
 }
 
@@ -43,7 +43,7 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
                 if (!Settings.IncludeExt?.includes(Extention))
                     return;
 
-                // If file is not under a subfolder, add it to the beginning of the array
+
                 const RelativeFilepath = path.relative(AbsRootDir, Filepath).replace(PathSlashesRE, "/");
 
                 for (const Pattern of ExcludePatterns) {
@@ -58,11 +58,11 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
 
                 const Data: SitemapFileData = {
                     Url: Url,
-                    LastMod: fs.statSync(Filepath).mtime.toLocaleDateString(),
+                    LastMod: fs.statSync(Filepath).mtime,
                     Depth: Depth
                 };
 
-                if (!Depth)
+                if (!Depth) // Remove once prio sorting is in
                     return FilesData.unshift(Data);
                 return FilesData.push(Data);
             }
@@ -77,10 +77,10 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
 function GetWebUrlFromFilepath(SitemapSettings: settings.SitemapSettings, RelativeFilepath: string) {
     const FileBaseName = path.basename(RelativeFilepath, path.extname(RelativeFilepath));
     if (SitemapSettings.bRemoveFileExtentions)
-        RelativeFilepath = path.join(path.dirname(RelativeFilepath), FileBaseName);
+        RelativeFilepath = path.posix.join(path.posix.dirname(RelativeFilepath), FileBaseName);
 
     if (FileBaseName.toLowerCase() === "index") {
-        RelativeFilepath = path.dirname(RelativeFilepath);
+        RelativeFilepath = path.posix.dirname(RelativeFilepath);
         if (RelativeFilepath === ".")
             RelativeFilepath = "";
     }
@@ -100,37 +100,19 @@ function GetWebUrlFromFilepath(SitemapSettings: settings.SitemapSettings, Relati
 
 export function GenerateSiteMap(Sitemap: string) {
     const SitemapSettings = settings.GetSitemapSettings(Sitemap);
-    const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
-
+    
     const SitemapData = GetSitemapData(SitemapSettings);
-
-    const SitemapWriter = new XmlWriter(AbsoluteSitemapPath);
+    
+    const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath);
 
     SitemapData.Files.forEach(FileData => {
         const Depth = 1 - (FileData.Depth / (SitemapData.MaxDepth + 1));
-        AddSitemapEntry(SitemapWriter, FileData.Url, FileData.LastMod, Depth);
+        SitemapWriter.AddItem(FileData.Url, FileData.LastMod, Depth);
     });
 
-    SitemapWriter.WriteFile();
+    SitemapWriter.Write();
 
     return AbsoluteSitemapPath;
 
-}
-
-function AddSitemapEntry(SitemapWriter: XmlWriter, Loc: string, Lastmod: string, Priority: number) {
-    SitemapWriter.OpenTag("url");
-
-    SitemapWriter.OpenTag("loc");
-    SitemapWriter.WriteContent(Loc);
-    SitemapWriter.CloseTag();
-
-    SitemapWriter.OpenTag("lastmod");
-    SitemapWriter.WriteContent(Lastmod);
-    SitemapWriter.CloseTag();
-
-    SitemapWriter.OpenTag("priority");
-    SitemapWriter.WriteContent(Priority.toFixed(2));
-    SitemapWriter.CloseTag();
-
-    SitemapWriter.CloseTag();
 }

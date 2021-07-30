@@ -14,7 +14,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:sitemap-generator.new"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -23,6 +23,16 @@
 				"category": "Sitemap-Generator",
 				"title": "New Sitemap",
 				"command": "sitemap-generator.new"
+			},
+			{
+				"category": "Sitemap-Generator",
+				"title": "Re-Generate Sitemap",
+				"command": "sitemap-generator.update"
+			},
+			{
+				"category": "Sitemap-Generator",
+				"title": "Open Settings (JSON)",
+				"command": "sitemap-generator.openSettings"
 			}
 		]
 	},
