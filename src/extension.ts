@@ -7,6 +7,7 @@ let SitemapsAutoUpdate: string[] = [];
 let AutoUpdateListenerEnabled = false;
 let CachedSitemapSettings: settings.SitemapSettings[] = settings.ReadSettings();
 
+
 export function activate(context: vscode.ExtensionContext) {
 
 	/* COMMANDS */
@@ -74,19 +75,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 }
 
+
 export function deactivate() { }
+
 
 function ShouldFileChangeUpdateSitemap(Sitemap: string, Filepath: string) {
 	const SitemapSettings = settings.GetSitemapSettings(Sitemap, CachedSitemapSettings);
 	if (SitemapSettings.Root === undefined || SitemapSettings.Exclude === undefined)
 		return false;
-	
+
 	// Check so file extetion of the file just saved is included in the sitemap settings
 	if (!SitemapSettings.IncludeExt?.includes(path.extname(Filepath)))
 		return false;
-		
+
 	const RelativeFilepath = path.relative(path.join(generator.GetWorkspaceFolder(), SitemapSettings.Root), Filepath).replace(/\\/g, "/");
-	
+
 	// Make sure file saved is under the root
 	if (RelativeFilepath.startsWith(".."))
 		return false;
@@ -146,7 +149,7 @@ function ActivateEventListener() {
 					else if (bNewShouldTriggerUpdate && bOldShouldTriggerUpdate) {
 						generator.OnFileRenamed(Sitemap, FileRename.oldUri.fsPath, FileRename.newUri.fsPath);
 					}
-					else if (bNewShouldTriggerUpdate && !bOldShouldTriggerUpdate){
+					else if (bNewShouldTriggerUpdate && !bOldShouldTriggerUpdate) {
 						generator.OnFileRemoved(Sitemap, FileRename.oldUri.fsPath);
 						generator.OnFileAdded(Sitemap, FileRename.newUri.fsPath);
 					}
@@ -156,12 +159,6 @@ function ActivateEventListener() {
 	});
 
 }
-
-
-
-
-
-
 
 
 async function NewSitemap() {
@@ -186,9 +183,10 @@ async function NewSitemap() {
 	return true;
 }
 
+
 async function RegenerateSitemap(Sitemap?: string) {
 	if (!Sitemap) {
-		const Sitemaps = settings.GetSitemaps();
+		const Sitemaps = Object.keys(CachedSitemapSettings);
 		if (!Sitemaps) {
 			const UserSelection = await vscode.window.showErrorMessage("No sitemap found, would you like to create a new one?", "Yes", "No");
 			if (UserSelection === "Yes")
@@ -212,6 +210,7 @@ async function RegenerateSitemap(Sitemap?: string) {
 	return true;
 }
 
+
 /**
  * Ask user where the root of the website is
  * @async
@@ -234,6 +233,7 @@ async function ChoseRootDirectory() {
 
 	return folderURI[0].fsPath;
 }
+
 
 /**
  * 

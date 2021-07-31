@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import * as settings from './settings';
-import { SitemapXmlWriter } from "./xmlWriter";
+import { SitemapXmlWriter } from "./sitemap-writer";
 
 interface SitemapFileData {
     Url: string,

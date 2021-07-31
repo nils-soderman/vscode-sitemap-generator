@@ -17,8 +17,7 @@ export interface SitemapSettings {
     bMinimized?: boolean
 }
 
-
-export const DEFAULT_SETTINGS: SitemapSettings = {
+const DEFAULT_SETTINGS: SitemapSettings = {
     Protocol: "http",
     DomainName: "example.com",
     Root: "./",
@@ -32,27 +31,31 @@ export const DEFAULT_SETTINGS: SitemapSettings = {
 };
 
 
+/**
+ * Check if a file is a sitemap-generator.json settings file.
+ * @param Filepath Absolute filepath
+ * @returns boolean weither the file is a settings file or not
+ */
 export function IsSettingsFile(Filepath: string) {
     return Filepath.endsWith(path.join(".vscode", SETTINGS_FILENAME));
 }
 
 
-export function GetSettingsFilepath(bEnsureFileExists = false) {
-    let Filepath = "";
+/**
+ * Get the absolute filepath to the settings file
+ * @returns Absolute filepath
+ */
+export function GetSettingsFilepath() {
     if (vscode.workspace.workspaceFolders)
-        Filepath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, ".vscode", SETTINGS_FILENAME);
-    else {
-        vscode.window.showErrorMessage("No workspace open! :(");
-        return "";
-    }
-    // TODO: this could probably be removed.
-    if (bEnsureFileExists && !fs.existsSync(Filepath))
-        fs.writeFileSync(Filepath, "{}");
-
-    return Filepath;
+        return path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, ".vscode", SETTINGS_FILENAME);
+    return "";
 }
 
 
+/**
+ * Parse the json settings file
+ * @returns File content as an object
+ */
 export function ReadSettings() {
     const Filepath = GetSettingsFilepath();
     if (!fs.existsSync(Filepath))
@@ -61,57 +64,54 @@ export function ReadSettings() {
 }
 
 
+/**
+ * Write data into the settings file, this will overwrite the current file
+ * @param Data Data to be written into the file
+ */
 function WriteSettings(Data: any) {
     const Filepath = GetSettingsFilepath();
     fs.writeFileSync(Filepath, JSON.stringify(Data, undefined, 2));
 }
 
 
-export function GetSitemaps() {
-    return Object.keys(ReadSettings());
-}
-
-
 /**
- * 
- * @param Sitemap 
- * @returns 
+ * Get settings
+ * @param Sitemap Sitemap relative workspace path
+ * @param CachedSettings Optional cached settings, if provided it'll skip re-parsing the settings file
+ * @returns Settings object
  */
-export function GetSitemapSettings(Sitemap: string, CachedSettings?:any): SitemapSettings {
+export function GetSitemapSettings(Sitemap: string, CachedSettings?: any): SitemapSettings {
     const Data = (CachedSettings) ? CachedSettings : ReadSettings();
-    if (!Data[Sitemap]) {
-        WriteDefaultSitemapSettings(Sitemap);
+    if (!Data[Sitemap])
         return DEFAULT_SETTINGS;
-    }
 
-    // Get default values if a value is undefined
+    // Get the default values if a value is undefined
     Object.entries(DEFAULT_SETTINGS).forEach(Entry => {
         if (Data[Sitemap][Entry[0]] === undefined) {
             Data[Sitemap][Entry[0]] = Entry[1];
         }
     });
 
+    // If root starts with '.', '/' or './', remove that prefix
     if (Data[Sitemap].Root.startsWith("."))
         Data[Sitemap].Root = Data[Sitemap].Root.substr(1);
-    if (Data[Sitemap].Root?.startsWith("/"))
+    if (Data[Sitemap].Root.startsWith("/"))
         Data[Sitemap].Root = Data[Sitemap].Root.substr(1);
 
     return Data[Sitemap];
 }
 
 
-export function SetSitemapSetting(Sitemap: string, Settings: SitemapSettings): SitemapSettings {
+/**
+ * Update a property
+ * Example: SetSitemapSetting("Sitemap.xml" {Protocol: "https"});
+ * @param Sitemap Sitemap relative workspace path
+ * @param Settings new values
+ */
+export function SetSitemapSetting(Sitemap: string, Settings: SitemapSettings) {
     const Data = ReadSettings();
     if (!Data[Sitemap])
         Data[Sitemap] = DEFAULT_SETTINGS;
     Object.assign(Data[Sitemap], Settings);
-    WriteSettings(Data);
-    return Data;
-}
-
-
-async function WriteDefaultSitemapSettings(Sitemap: string) {
-    const Data = ReadSettings();
-    Data[Sitemap] = DEFAULT_SETTINGS;
     WriteSettings(Data);
 }
