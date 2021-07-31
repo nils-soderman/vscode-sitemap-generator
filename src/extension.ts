@@ -103,6 +103,7 @@ function ShouldFileChangeUpdateSitemap(Sitemap: string, Filepath: string) {
 	return true;
 }
 
+
 function ActivateEventListener() {
 	if (AutoUpdateListenerEnabled)
 		return;
