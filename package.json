@@ -27,7 +27,7 @@
 			{
 				"category": "Sitemap-Generator",
 				"title": "Re-Generate Sitemap",
-				"command": "sitemap-generator.update"
+				"command": "sitemap-generator.reGenerate"
 			},
 			{
 				"category": "Sitemap-Generator",

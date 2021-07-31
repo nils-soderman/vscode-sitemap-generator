@@ -13,7 +13,7 @@ class SitemapUrl {
      * @returns This url group as an xml formatted string
      */
     ToXMLString(TabCharacter = "\t") {
-        let Content = `\n${TabCharacter}${TabCharacter}`;
+        let Content = "\n";
 
         // Add all tags
         for (let Item of [
@@ -25,12 +25,10 @@ class SitemapUrl {
             if (Item[1] === undefined)
                 continue;
 
-            Content += `<${Item[0]}>${Item[1]}</${Item[0]}>\n${TabCharacter}${TabCharacter}`;
+            Content += `${TabCharacter}${TabCharacter}<${Item[0]}>${Item[1]}</${Item[0]}>\n`;
         }
 
-        Content = Content.trimEnd() + `\n${TabCharacter}`;
-
-        return `<url>${Content}</url>`;
+        return `<url>${Content}${TabCharacter}</url>`;
     }
 
 }
