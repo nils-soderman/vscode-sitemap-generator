@@ -176,7 +176,7 @@ export function GenerateSiteMap(Sitemap: string) {
         );
     });
 
-    SitemapWriter.Write(SitemapSettings.bMinimized);
+    SitemapWriter.Write(SitemapSettings.bMinimized, SitemapSettings.TabCharacters);
 
     return AbsoluteSitemapPath;
 }
@@ -204,7 +204,7 @@ export function OnFileAdded(Sitemap: string, Filepath: string) {
         CalculatePrio(GetUrlDepthValue(Url), SitemapWriter.GetCurrentMaxDepth())
     );
 
-    SitemapWriter.Write(SitemapSettings.bMinimized);
+    SitemapWriter.Write(SitemapSettings.bMinimized, SitemapSettings.TabCharacters);
 }
 
 
@@ -223,7 +223,7 @@ export function OnFileSaved(Sitemap: string, Filepath: string) {
     // Update last modified to today
     Item.LastMod = new Date();
 
-    SitemapWriter.Write(SitemapSettings.bMinimized);
+    SitemapWriter.Write(SitemapSettings.bMinimized, SitemapSettings.TabCharacters);
 }
 
 
@@ -241,7 +241,7 @@ export function OnFileRemoved(Sitemap: string, Filepath: string) {
     // Remove the item from the sitemap
     SitemapWriter.RemoveItem(Url);
 
-    SitemapWriter.Write(SitemapSettings.bMinimized);
+    SitemapWriter.Write(SitemapSettings.bMinimized, SitemapSettings.TabCharacters);
 }
 
 
@@ -265,5 +265,5 @@ export function OnFileRenamed(Sitemap: string, OldFilepath: string, NewFilePath:
     SitemapWriter.AddItem(NewUrl, new Date(), OldItem.Prio);
     SitemapWriter.RemoveItem(OldUrl);
 
-    SitemapWriter.Write(SitemapSettings.bMinimized);
+    SitemapWriter.Write(SitemapSettings.bMinimized, SitemapSettings.TabCharacters);
 }

@@ -35,13 +35,9 @@ class SitemapUrl {
 
 
 export class SitemapXmlWriter {
-    // TODO: Parse XMLVersion & Encoding
-    XMLVersion = 1.0;
+    XMLVersion = "1.0";
     XMLEncoding = "UTF-8";
     Urls: SitemapUrl[] = [];
-
-    /** Character(s) to use as tabs in the xml file */
-    TabCharacter = "  ";
 
     /**
      * @param Filepath Absolute filepath to the sitemap
@@ -61,6 +57,14 @@ export class SitemapXmlWriter {
      */
     private _ParseContent(Content: string) {
         // Get all of the <url> tags
+
+        // Find out xml version & encoding
+        const WantedVersion = Content.match(/(?<=\?xml\s*version=")(.|\n)*?(?=")/);
+        this.XMLVersion = WantedVersion ? WantedVersion[0] : this.XMLVersion;
+        
+        const WantedEncoding = Content.match(/(?<=encoding=")(.|\n)*?(?=")/);
+        this.XMLEncoding = WantedEncoding ? WantedEncoding[0] : this.XMLEncoding;
+
         const RawData = Content.match(/(?<=<url>)(.|\n)*?(?=<\/url>)/g);
         if (!RawData)
             return;
@@ -101,8 +105,7 @@ export class SitemapXmlWriter {
      * @param Url The URL of the item to remove
      */
     RemoveItem(Url: string) {
-        //ToDo, use GetItem()
-        this.Urls = this.Urls.filter(x => x.Url !== Url);
+        this.Urls = this.Urls.filter(x => x !== this.GetItem(Url));
     }
 
     /**
@@ -111,9 +114,16 @@ export class SitemapXmlWriter {
      * @returns pointer to a Url object that can be modified
      */
     GetItem(Url: string) {
-        // ToDo: split at third /, so weither it includes www. etc, doesn't mather + last trailing slash
-        const Index = this.Urls.findIndex((x => x.Url === Url));
+        const WantedItemPath = this._GetRelativePathFromUrl(Url);
+        const Index = this.Urls.findIndex((x => this._GetRelativePathFromUrl(x.Url) === WantedItemPath));
         return this.Urls[Index];
+    }
+
+    private _GetRelativePathFromUrl(Url: string) {
+        Url = Url.split(":")[1];
+        if (Url.includes("/"))
+            return Url.split("/")[1];
+        return "";
     }
 
     /**
@@ -124,7 +134,6 @@ export class SitemapXmlWriter {
         const FwdSlashRegexp = new RegExp("/", "g");
 
         this.Urls.forEach(Url => {
-            // ToDo: Move this calculation, there should be a funciton of it since it's used in multiple locations
             const Depth = (Url.Url.slice(0, -1).match(FwdSlashRegexp) || [0, 0]).length - 2;
             if (Depth > MaxDepth)
                 MaxDepth = Depth;
@@ -136,8 +145,9 @@ export class SitemapXmlWriter {
     /**
      * Write the current urls list to the sitemap, if file already exists it will be overwritten.
      * @param bMinimized Minimize the filesize by removing all whitespace
+     * @param TabCharacter Character(s) to use as tabs, will default to \t
      */
-    Write(bMinimized = false) {
+    Write(bMinimized = false, TabCharacter = "\t") {
         let Content = `<?xml version="${this.XMLVersion}" encoding="${this.XMLEncoding}"?>`;
 
         // ToDo: Make this line less hard coded & allow for more options than just xmlns
@@ -148,7 +158,7 @@ export class SitemapXmlWriter {
 
         // Add all urls
         this.Urls.forEach(Url => {
-            Content += `${this.TabCharacter}${Url.ToXMLString(this.TabCharacter)}\n`;
+            Content += `${TabCharacter}${Url.ToXMLString(TabCharacter)}\n`;
         });
 
         Content += "</urlset>";
