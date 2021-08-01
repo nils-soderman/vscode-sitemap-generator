@@ -18,6 +18,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('sitemap-generator.new', async () => {
 			NewSitemap();
+			
+			// Re-cache settings
+			CachedSitemapSettings = settings.ReadSettings();
+			_UpdateEventListenerList();
 		})
 	);
 
@@ -210,21 +214,22 @@ function ActivateEventListener(context: vscode.ExtensionContext) {
  * @async
  */
 async function NewSitemap() {
-
-	// TODO: Switch this dialog to a save as dialog ?
-	const OpenDialogOptions: vscode.OpenDialogOptions = {
-		title: "Set Website Root",
-		openLabel: "Set Website Root",
-		canSelectMany: false,
-		canSelectFolders: true,
-		canSelectFiles: false,
+	const SaveDialogOptions: vscode.SaveDialogOptions = {
+		title: "Select where to save the sitemap",
+		saveLabel: "Create Sitemap",
+		filters: {
+			"XML": ["xml"]
+		}
 	};
-	if (vscode.workspace.workspaceFolders)
-		OpenDialogOptions.defaultUri = vscode.workspace.workspaceFolders[0].uri;
+	
+	if (vscode.workspace.workspaceFolders) {
+		const DefaultFilepath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, "sitemap.xml");
+		SaveDialogOptions.defaultUri = vscode.Uri.file(DefaultFilepath);
+	}
 
 	// Ask user for the website root
-	let WebsiteRootUris = await vscode.window.showOpenDialog(OpenDialogOptions);
-	if (!WebsiteRootUris)
+	const SitemapUri = await vscode.window.showSaveDialog(SaveDialogOptions);
+	if (!SitemapUri)
 		return false;
 
 	// Ask user to select a protocol
@@ -237,13 +242,12 @@ async function NewSitemap() {
 	if (!DomainName)
 		return false;
 
-	const AbsSitemapFilepath = WebsiteRootUris[0].fsPath + "/sitemap.xml";
 
 	// Check if file already exists
-	if (fs.existsSync(AbsSitemapFilepath)) {
+	if (fs.existsSync(SitemapUri.fsPath)) {
 		// Ask if user wants to overwrite existing file
 		const UserSelection = await vscode.window.showWarningMessage(
-			`Sitemap already exists:\n${AbsSitemapFilepath}\nWould you like to overwrite it?`,
+			`Sitemap already exists:\n${SitemapUri.fsPath}\nWould you like to overwrite it?`,
 			"Overwrite",
 			"Abort"
 		);
@@ -252,7 +256,7 @@ async function NewSitemap() {
 	}
 
 
-	const RelativeSitemapFilepath = path.relative(generator.GetWorkspaceFolder(), AbsSitemapFilepath);
+	const RelativeSitemapFilepath = path.relative(generator.GetWorkspaceFolder(), SitemapUri.fsPath);
 
 	// Write default settings into the sitemap-generator.json file
 	settings.SetSitemapSetting(RelativeSitemapFilepath, { Protocol: Protocol, DomainName: DomainName });
@@ -260,7 +264,7 @@ async function NewSitemap() {
 	generator.GenerateSiteMap(RelativeSitemapFilepath);
 
 	// Open the sitemap in the editor
-	OpenFile(AbsSitemapFilepath);
+	OpenFile(SitemapUri.fsPath);
 
 	return true;
 }
