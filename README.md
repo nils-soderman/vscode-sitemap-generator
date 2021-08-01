@@ -39,8 +39,9 @@ This file includes some tweakable settings to make format the sitemap as you wan
 | Root                        | string           | "./"                  | The relative path from the workspace to the website root where it should search for files    |
 | IncludeExt                  | string[]         | [".html", ".php"]     | List of file extentions to count as urls. e.g. ".html"                                       |
 | Exclude                     | string[]         | []                    | List of regex patterns of files to be excluded from the sitemap                              |
+| TabCharacters               | string           | "\t"                  | Character(s) to be used as tabs in the generated sitemap                                     |
 | bRemoveFileExtentions       | boolean          | false                 | Remove file extentions from the url                                                          |
-| bIncludeWWW                 | boolean          | true                  | If the url should include "www<span></span>." or not                                                      |
+| bIncludeWWW                 | boolean          | true                  | If the url should include "www<span></span>." or not                                         |
 | bUseTrailingSlash           | boolean          | false                 | Should url's end with a trailing forward slash                                               |
 | bAutomaticallyUpdateSitemap | boolean          | true                  | Will automatically keep the sitemap updated when modifying files                             |
 | bMinimized                  | boolean          | false                 | Remove all whitespaces characters from the generated file to minimize the filesize           |
