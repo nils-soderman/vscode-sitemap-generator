@@ -56,13 +56,20 @@ export function GetSettingsFilepath() {
 
 /**
  * Parse the json settings file
+ * @param FailedToParseValue - Return value if the settings file couldn't be parsed
  * @returns File content as an object
  */
-export function ReadSettings() {
+export function ReadSettings(FailedToParseValue = {}) {
     const Filepath = GetSettingsFilepath();
     if (!fs.existsSync(Filepath))
-        return {};
-    return JSON.parse(fs.readFileSync(Filepath, "utf8"));
+        return FailedToParseValue;
+    const FileContent = fs.readFileSync(Filepath, "utf8");
+    try {
+        return JSON.parse(FileContent);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to parse ${path.basename(Filepath)}. JSON file incorrectly formatted.`);
+        return FailedToParseValue;
+    }
 }
 
 
