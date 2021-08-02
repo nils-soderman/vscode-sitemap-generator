@@ -1,3 +1,4 @@
+import * as GlobToRegExp from 'glob-to-regexp';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -65,7 +66,10 @@ export function activate(context: vscode.ExtensionContext) {
 				if (settings.IsSettingsFile(Document.uri.fsPath)) {
 
 					// Re-Cache the settings
-					CachedSitemapSettings = settings.ReadSettings();
+					const UpdatedSettings = settings.ReadSettings(false);
+					if (UpdatedSettings === false)
+						return;
+					CachedSitemapSettings = UpdatedSettings;
 					_UpdateEventListenerList();
 
 					// Ask user if they would like to re-generate the sitemap
@@ -156,7 +160,7 @@ function ShouldFileChangeUpdateSitemap(Sitemap: string, Filepath: string) {
 
 	// Check if the file just saved is under a exclude filter
 	for (const Pattern of SitemapSettings.Exclude) {
-		if (RelativeFilepath.search(new RegExp(Pattern)) !== -1)
+		if (RelativeFilepath.search(GlobToRegExp(Pattern)) !== -1)
 			return false;
 	}
 
@@ -270,20 +274,6 @@ async function NewSitemap() {
 	const DomainName = await vscode.window.showInputBox({ title: "Domain Name", placeHolder: 'Enter your doman name. like: "example.com"' });
 	if (!DomainName)
 		return false;
-
-
-	// Check if file already exists
-	if (fs.existsSync(SitemapUri.fsPath)) {
-		// Ask if user wants to overwrite existing file
-		const UserSelection = await vscode.window.showWarningMessage(
-			`Sitemap already exists:\n${SitemapUri.fsPath}\nWould you like to overwrite it?`,
-			"Overwrite",
-			"Abort"
-		);
-		if (UserSelection !== "Overwrite")
-			return false;
-	}
-
 
 	const RelativeSitemapFilepath = path.relative(generator.GetWorkspaceFolder(), SitemapUri.fsPath);
 

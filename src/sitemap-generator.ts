@@ -1,3 +1,4 @@
+import * as GlobToRegex from 'glob-to-regexp';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -53,10 +54,9 @@ function GetSitemapData(Settings: settings.SitemapSettings) {
     const PathSlashesRE = new RegExp("\\" + path.sep, "g");
 
     // Build regex patterns from the exclude pattens entered in setting
-    // TODO: Change these to be glob patterns instead
     let ExcludePatterns: RegExp[] = [];
     Settings.Exclude?.forEach(Pattern => {
-        ExcludePatterns.push(new RegExp(Pattern));
+        ExcludePatterns.push(GlobToRegex(Pattern));
     });
 
     const AbsRootDir = path.posix.join(GetWorkspaceFolder(), Settings.Root ? Settings.Root : "");
