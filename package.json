@@ -5,7 +5,7 @@
 	"description": "Automatically generate sitemap files for your website & keep them updated as you work.",
 	"version": "1.0.0",
 	"qna": "marketplace",
-	"license": "SEE LICENSE IN LICENSE.txt",
+	"license": "SEE LICENSE IN LICENSE",
 	"author": {
 		"name": "nilssoderman"
 	},
