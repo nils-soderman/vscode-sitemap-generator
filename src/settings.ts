@@ -72,6 +72,11 @@ export function ReadSettings() {
  */
 function WriteSettings(Data: any) {
     const Filepath = GetSettingsFilepath();
+
+    // Ensure .vscode folder exists
+    if (!fs.existsSync(path.dirname(Filepath)))
+        fs.mkdirSync(path.dirname(Filepath));
+        
     fs.writeFileSync(Filepath, JSON.stringify(Data, undefined, 2));
 }
 
