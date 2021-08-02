@@ -1,12 +1,14 @@
 {
 	"name": "sitemap-generator",
-	"publisher": "Nils Soderman",
+	"publisher": "NilsSoderman",
 	"displayName": "Sitemap Generator",
-	"description": "Automatically generate a sitemap file for your website.",
+	"description": "Automatically generate sitemap files for your website & keep them updated as you work.",
 	"version": "0.0.1",
+	"qna": "marketplace",
+	"license": "SEE LICENSE IN LICENSE",
 	"author": {
 		"name": "nilssoderman"
-	  },
+	},
 	"engines": {
 		"vscode": "^1.58.0"
 	},
@@ -56,5 +58,13 @@
 		"mocha": "^8.4.0",
 		"typescript": "^4.3.2",
 		"vscode-test": "^1.5.2"
+	},
+	"icon": "media/icon.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/nils-soderman/vscode-sitemap-generator"
+	},
+	"bugs": {
+		"url": "https://github.com/nils-soderman/vscode-sitemap-generator/issues"
 	}
 }
