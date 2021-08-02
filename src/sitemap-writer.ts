@@ -120,10 +120,7 @@ export class SitemapXmlWriter {
     }
 
     private _GetRelativePathFromUrl(Url: string) {
-        Url = Url.split(":")[1];
-        if (Url.includes("/"))
-            return Url.split("/")[1];
-        return "";
+        return Url.substring(Url.indexOf('/', 8) + 1);
     }
 
     /**
