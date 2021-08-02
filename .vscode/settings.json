@@ -4,16 +4,21 @@
         "out": true,
         "node_modules": true,
         "src/test": true,
-        "LICENSE": true
+        "LICENSE": true,
+        "**/*.vsix": true
     },
     "search.exclude": {
         "out": true,
         "node_modules": true,
         "src/test": true,
         "**.md": true,
-        "*/*.json": true,
+        "**/*.json": true,
+        "**/*.vscodeignore": true,
+        "**/*.jpg": true,
+        "**/*.png": true,
         ".gitignore": true,
-        "LICENSE": true
+        "LICENSE": true,
+        "**/*.vsix": true
     },
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
     "typescript.tsc.autoDetect": "off"
