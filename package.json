@@ -57,7 +57,8 @@
 		"glob": "^7.1.7",
 		"mocha": "^8.4.0",
 		"typescript": "^4.3.2",
-		"vscode-test": "^1.5.2"
+		"vscode-test": "^1.5.2",
+		"@types/glob-to-regexp": "^0.4.1"
 	},
 	"icon": "media/icon.png",
 	"repository": {
@@ -68,6 +69,6 @@
 		"url": "https://github.com/nils-soderman/vscode-sitemap-generator/issues"
 	},
 	"dependencies": {
-		"@types/glob-to-regexp": "^0.4.1"
+		"glob-to-regexp": "^0.4.1"
 	}
 }
