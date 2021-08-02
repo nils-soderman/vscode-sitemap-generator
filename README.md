@@ -1,5 +1,7 @@
 # Sitemap Generator (VSCode Extention)
-Automatically generate sitemaps & keep them updated as you modify files.
+Automatically generate sitemaps & keep it updated as you add, remove or modify files.
+
+![Demo](https://github.com/nils-soderman/vscode-sitemap-generator/blob/master/media/demo.jpg?raw=true)
 
 <br>
 
