@@ -3,9 +3,9 @@
 	"publisher": "NilsSoderman",
 	"displayName": "Sitemap Generator",
 	"description": "Automatically generate sitemap files for your website & keep them updated as you work.",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"qna": "marketplace",
-	"license": "SEE LICENSE IN LICENSE",
+	"license": "SEE LICENSE IN LICENSE.txt",
 	"author": {
 		"name": "nilssoderman"
 	},
