@@ -13,10 +13,13 @@ let CachedSitemapSettings: settings.SitemapSettings[] = settings.ReadSettings();
 export function activate(context: vscode.ExtensionContext) {
 
 	/* COMMANDS */
-
+	
 	// New Command
 	context.subscriptions.push(
 		vscode.commands.registerCommand('sitemap-generator.new', async () => {
+			if (!_ValidateWorkspace())
+				return;
+			
 			NewSitemap();
 			
 			// Re-cache settings
@@ -28,7 +31,14 @@ export function activate(context: vscode.ExtensionContext) {
 	// Open Settings
 	context.subscriptions.push(
 		vscode.commands.registerCommand('sitemap-generator.openSettings', () => {
+			if (!_ValidateWorkspace())
+				return;
+			
 			const Filepath = settings.GetSettingsFilepath();
+			if (!fs.existsSync(Filepath)){
+				vscode.window.showErrorMessage(`No sitemap-generator settings file found.\n${Filepath}\nMake sure you first Generate a new sitemap using: "Sitemap-Generator: New Sitemap"`);
+				return;
+			}
 			OpenFile(Filepath);
 		})
 	);
@@ -36,6 +46,9 @@ export function activate(context: vscode.ExtensionContext) {
 	// Re-Generate sitemap
 	context.subscriptions.push(
 		vscode.commands.registerCommand('sitemap-generator.reGenerate', async () => {
+			if (!_ValidateWorkspace())
+				return;
+			
 			RegenerateSitemap();
 		})
 	);
@@ -78,6 +91,8 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	/* Private Functions */
+
 	/**
 	 * Update the SitemapsAutoUpdate list with all sitemaps that have auto-update enabled
 	 */
@@ -92,6 +107,20 @@ export function activate(context: vscode.ExtensionContext) {
 					ActivateEventListener(context);
 			}
 		}
+	}
+
+	/** Make sure user has a workspace open */
+	function _ValidateWorkspace() {
+		if (!vscode.workspace.workspaceFolders) {
+			vscode.window.showErrorMessage("Error: VSCode has no workspace/folder open.");
+			return false;
+		}
+		return true;
+	}
+
+
+	if (!vscode.workspace.workspaceFolders) {
+		return;
 	}
 	_UpdateEventListenerList();
 
