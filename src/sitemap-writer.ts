@@ -1,11 +1,13 @@
 import * as fs from 'fs';
 
+type ChangeFreqencyTypes = "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
 
 class SitemapUrl {
     constructor(
         public Url: string,
         public LastMod?: Date,
-        public Prio?: number
+        public Prio?: number,
+        public ChangeFreq?: ChangeFreqencyTypes
     ) { }
 
     /**
@@ -19,6 +21,7 @@ class SitemapUrl {
         for (let Item of [
             ["loc", this.Url],
             ["priority", this.Prio?.toFixed(2)],
+            ["changefreq", this.ChangeFreq],
             ["lastmod", this.LastMod?.toLocaleDateString()]
         ]) {
             // If a value is undefined, skip adding that tag
@@ -37,6 +40,9 @@ class SitemapUrl {
 export class SitemapXmlWriter {
     XMLVersion = "1.0";
     XMLEncoding = "UTF-8";
+    UrlsetProperties: any = {
+        "xmlns": ["http://www.sitemaps.org/schemas/sitemap/0.9"]
+    };
     Urls: SitemapUrl[] = [];
 
     /**
@@ -61,9 +67,13 @@ export class SitemapXmlWriter {
         // Find out xml version & encoding
         const WantedVersion = Content.match(/(?<=\?xml\s*version=")(.|\n)*?(?=")/);
         this.XMLVersion = WantedVersion ? WantedVersion[0] : this.XMLVersion;
-        
+
         const WantedEncoding = Content.match(/(?<=encoding=")(.|\n)*?(?=")/);
         this.XMLEncoding = WantedEncoding ? WantedEncoding[0] : this.XMLEncoding;
+
+        //const WantedEncoding = Content.match(/(?<=\<urlset")(.|\n)*?(?=\>)/);
+        //this.XMLEncoding = WantedEncoding ? WantedEncoding[0] : this.XMLEncoding;
+
 
         const RawData = Content.match(/(?<=<url>)(.|\n)*?(?=<\/url>)/g);
         if (!RawData)
@@ -73,6 +83,7 @@ export class SitemapXmlWriter {
         const LocRegexp = new RegExp("(?<=<loc>)(.|\n)*?(?=</loc>)", "g");
         const PrioRegexp = new RegExp("(?<=<priority>)(.|\n)*?(?=</priority>)", "g");
         const LastModRegexp = new RegExp("(?<=<lastmod>)(.|\n)*?(?=</lastmod>)", "g");
+        const ChangefreqRegexp = new RegExp("(?<=<changefreq>)(.|\n)*?(?=</changefreq>)", "g");
 
         // Loop through each <url>, extract all of the data and add it as an item to the Urls list
         RawData.forEach(UrlItemRawData => {
@@ -86,7 +97,10 @@ export class SitemapXmlWriter {
             let LastMod = UrlItemRawData.match(LastModRegexp);
             const LastModDate = (LastMod) ? new Date(LastMod[0]) : undefined;
 
-            this.AddItem(Url[0], LastModDate, PrioNumber);
+            let ChangeFreqRaw = UrlItemRawData.match(ChangefreqRegexp);
+            const ChangeFreq = (ChangeFreqRaw) ? <ChangeFreqencyTypes>ChangeFreqRaw[0] : undefined;
+
+            this.AddItem(Url[0], LastModDate, PrioNumber, ChangeFreq);
         });
     }
 
@@ -96,8 +110,8 @@ export class SitemapXmlWriter {
      * @param LastMod Date when page was last modified
      * @param Prio The priority of the page
      */
-    AddItem(Url: string, LastMod?: Date, Prio?: number) {
-        this.Urls.push(new SitemapUrl(Url, LastMod, Prio));
+    AddItem(Url: string, LastMod?: Date, Prio?: number, ChangeFreq?: ChangeFreqencyTypes) {
+        this.Urls.push(new SitemapUrl(Url, LastMod, Prio, ChangeFreq));
     }
 
     /**
@@ -147,8 +161,14 @@ export class SitemapXmlWriter {
     Write(bMinimized = false, TabCharacter = "\t") {
         let Content = `<?xml version="${this.XMLVersion}" encoding="${this.XMLEncoding}"?>`;
 
-        // ToDo: Make this line less hard coded & allow for more options than just xmlns
-        Content += `\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+        let UrlsetContentString = "";
+        for (const Property in this.UrlsetProperties) {
+            UrlsetContentString += `${Property}=`;
+            this.UrlsetProperties[Property].forEach((Url: string) => {
+                UrlsetContentString += `"${Url}"`;
+            });
+        }
+        Content += `\n<urlset ${UrlsetContentString}>\n`;
 
         // Sort urls list by prio
         this.Urls.sort((a, b) => ((a.Prio ? a.Prio : 0) < (b.Prio ? b.Prio : 0)) ? 1 : -1);

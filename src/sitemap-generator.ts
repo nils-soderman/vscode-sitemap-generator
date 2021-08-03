@@ -169,10 +169,12 @@ export function GenerateSiteMap(Sitemap: string) {
 
     // Add all of the data to the sitemap
     SitemapData.Files.forEach(FileData => {
+        
         SitemapWriter.AddItem(
             FileData.Url,
-            FileData.LastMod,
-            CalculatePrio(FileData.Depth, SitemapData.MaxDepth)
+            SitemapSettings.TagsToInclude?.includes("lastmod") ? FileData.LastMod : undefined,
+            SitemapSettings.TagsToInclude?.includes("priority") ? CalculatePrio(FileData.Depth, SitemapData.MaxDepth) : undefined,
+            SitemapSettings.TagsToInclude?.includes("changefreq") ? SitemapSettings.DefaultChangeFrequency : undefined
         );
     });
 

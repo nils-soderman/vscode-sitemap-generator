@@ -10,6 +10,8 @@ export interface SitemapSettings {
     Root?: string,
     IncludeExt?: string[],
     Exclude?: string[],
+    TagsToInclude?: ("priority"|"lastmod"|"changefreq")[]
+    DefaultChangeFrequency?: "always"|"hourly"|"daily"|"weekly"|"monthly"|"yearly"|"never",
     TabCharacters?: string,
     bIncludeWWW?: boolean,
     bRemoveFileExtentions?: boolean,
@@ -24,6 +26,8 @@ const DEFAULT_SETTINGS: SitemapSettings = {
     Root: "./",
     IncludeExt: [".html", ".php"],
     Exclude: [],
+    TagsToInclude: ["priority", "lastmod"],
+    DefaultChangeFrequency: "monthly",
     TabCharacters: "\t",
     bIncludeWWW: true,
     bRemoveFileExtentions: false,
