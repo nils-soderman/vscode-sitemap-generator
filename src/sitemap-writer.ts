@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as xml2js from 'xml2js';
 
 type ChangeFreqencyTypes = "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
 
@@ -41,66 +42,51 @@ export class SitemapXmlWriter {
     XMLVersion = "1.0";
     XMLEncoding = "UTF-8";
     UrlsetProperties: any = {
-        "xmlns": ["http://www.sitemaps.org/schemas/sitemap/0.9"]
+        "xmlns": "http://www.sitemaps.org/schemas/sitemap/0.9"
     };
     Urls: SitemapUrl[] = [];
 
     /**
      * @param Filepath Absolute filepath to the sitemap
-     * @param bParseSitemap Should current sitemap be parsed, won't be needed if e.g. it's about to be fully re-generated / overwritten
      */
-    constructor(public readonly Filepath: string, bParseSitemap = true) {
-        if (bParseSitemap) {
-            if (!fs.statSync(Filepath).isFile())
-                return;
-            this._ParseContent(fs.readFileSync(Filepath).toString());
-        }
-    }
+    constructor(public readonly Filepath: string) {}
 
     /**
      * Parse the xml file content and populate the Urls list
      * @param Content file content
      */
-    private _ParseContent(Content: string) {
+    async ParseFile() {
+        if (!fs.statSync(this.Filepath).isFile())
+            return;
+        
+        const RawFileContent = fs.readFileSync(this.Filepath).toString();
         // Get all of the <url> tags
-
+        
         // Find out xml version & encoding
-        const WantedVersion = Content.match(/(?<=\?xml\s*version=")(.|\n)*?(?=")/);
+        const WantedVersion = RawFileContent.match(/(?<=\?xml\s*version=")(.|\n)*?(?=")/);
         this.XMLVersion = WantedVersion ? WantedVersion[0] : this.XMLVersion;
 
-        const WantedEncoding = Content.match(/(?<=encoding=")(.|\n)*?(?=")/);
+        const WantedEncoding = RawFileContent.match(/(?<=encoding=")(.|\n)*?(?=")/);
         this.XMLEncoding = WantedEncoding ? WantedEncoding[0] : this.XMLEncoding;
-
-        //const WantedEncoding = Content.match(/(?<=\<urlset")(.|\n)*?(?=\>)/);
-        //this.XMLEncoding = WantedEncoding ? WantedEncoding[0] : this.XMLEncoding;
-
-
-        const RawData = Content.match(/(?<=<url>)(.|\n)*?(?=<\/url>)/g);
-        if (!RawData)
+        
+        const ParsedFileContent = await xml2js.parseStringPromise(RawFileContent);
+        if (!ParsedFileContent.urlset)
             return;
+        
+        this.UrlsetProperties = ParsedFileContent.urlset.$ ? ParsedFileContent.urlset.$ : this.UrlsetProperties;
 
-        // Avoid re-compiling the regex pattern for every loop by first creating regex variables 
-        const LocRegexp = new RegExp("(?<=<loc>)(.|\n)*?(?=</loc>)", "g");
-        const PrioRegexp = new RegExp("(?<=<priority>)(.|\n)*?(?=</priority>)", "g");
-        const LastModRegexp = new RegExp("(?<=<lastmod>)(.|\n)*?(?=</lastmod>)", "g");
-        const ChangefreqRegexp = new RegExp("(?<=<changefreq>)(.|\n)*?(?=</changefreq>)", "g");
-
-        // Loop through each <url>, extract all of the data and add it as an item to the Urls list
-        RawData.forEach(UrlItemRawData => {
-            const Url = UrlItemRawData.match(LocRegexp);
-            if (!Url)
-                return;
-
-            let Prio = UrlItemRawData.match(PrioRegexp);
-            const PrioNumber = (Prio) ? Number(Prio[0]) : undefined;
-
-            let LastMod = UrlItemRawData.match(LastModRegexp);
-            const LastModDate = (LastMod) ? new Date(LastMod[0]) : undefined;
-
-            let ChangeFreqRaw = UrlItemRawData.match(ChangefreqRegexp);
-            const ChangeFreq = (ChangeFreqRaw) ? <ChangeFreqencyTypes>ChangeFreqRaw[0] : undefined;
-
-            this.AddItem(Url[0], LastModDate, PrioNumber, ChangeFreq);
+        if (!ParsedFileContent.urlset.url)
+            return;
+        ParsedFileContent.urlset.url.forEach((UrlData:any) => {
+            const LastModDate = UrlData.lastmod ? new Date(UrlData.lastmod[0]) : undefined;
+            const PrioNumber = UrlData.priority ? Number(UrlData.priority[0]) : undefined;
+            const ChangeFreq = UrlData.changefreq ? <ChangeFreqencyTypes>UrlData.changefreq[0] : undefined;
+            this.AddItem(
+                UrlData.loc[0], 
+                LastModDate,
+                PrioNumber,
+                ChangeFreq
+                );
         });
     }
 
@@ -163,12 +149,9 @@ export class SitemapXmlWriter {
 
         let UrlsetContentString = "";
         for (const Property in this.UrlsetProperties) {
-            UrlsetContentString += `${Property}=`;
-            this.UrlsetProperties[Property].forEach((Url: string) => {
-                UrlsetContentString += `"${Url}"`;
-            });
+            UrlsetContentString += ` ${Property}="${this.UrlsetProperties[Property]}"`;
         }
-        Content += `\n<urlset ${UrlsetContentString}>\n`;
+        Content += `\n<urlset${UrlsetContentString}>\n`;
 
         // Sort urls list by prio
         this.Urls.sort((a, b) => ((a.Prio ? a.Prio : 0) < (b.Prio ? b.Prio : 0)) ? 1 : -1);

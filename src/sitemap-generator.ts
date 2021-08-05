@@ -165,7 +165,7 @@ export function GenerateSiteMap(Sitemap: string) {
     const SitemapData = GetSitemapData(SitemapSettings);
 
     const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
-    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, false);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath);
 
     // Add all of the data to the sitemap
     SitemapData.Files.forEach(FileData => {
@@ -193,10 +193,11 @@ export function GenerateSiteMap(Sitemap: string) {
  * @param Sitemap Relative filepath to the sitemap from the workspace
  * @param Filepath The absolute filepath to the file that has been added
  */
-export function OnFileAdded(Sitemap: string, Filepath: string) {
+export async function OnFileAdded(Sitemap: string, Filepath: string) {
     const SitemapSettings = settings.GetSitemapSettings(Sitemap);
     const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
-    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath);
+    await SitemapWriter.ParseFile();
     const Url = GetWebUrlFromFilepath(SitemapSettings, Filepath);
 
     // Add the item to the sitemap
@@ -215,10 +216,11 @@ export function OnFileAdded(Sitemap: string, Filepath: string) {
  * @param Sitemap Relative filepath to the sitemap from the workspace
  * @param Filepath The absolute filepath to the file that has been saved
  */
-export function OnFileSaved(Sitemap: string, Filepath: string) {
+export async function OnFileSaved(Sitemap: string, Filepath: string) {
     const SitemapSettings = settings.GetSitemapSettings(Sitemap);
     const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
-    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath);
+    await SitemapWriter.ParseFile();
     const Url = GetWebUrlFromFilepath(SitemapSettings, Filepath);
     const Item = SitemapWriter.GetItem(Url);
 
@@ -234,10 +236,11 @@ export function OnFileSaved(Sitemap: string, Filepath: string) {
  * @param Sitemap Relative filepath to the sitemap from the workspace
  * @param Filepath The absolute filepath to the file that has been deleted
  */
-export function OnFileRemoved(Sitemap: string, Filepath: string) {
+export async function OnFileRemoved(Sitemap: string, Filepath: string) {
     const SitemapSettings = settings.GetSitemapSettings(Sitemap);
     const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
-    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath);
+    await SitemapWriter.ParseFile();
     const Url = GetWebUrlFromFilepath(SitemapSettings, Filepath);
 
     // Remove the item from the sitemap
@@ -253,12 +256,13 @@ export function OnFileRemoved(Sitemap: string, Filepath: string) {
  * @param OldFilepath The previous absolute filepath
  * @param NewFilePath The new absolute filepath
  */
-export function OnFileRenamed(Sitemap: string, OldFilepath: string, NewFilePath: string) {
+export async function OnFileRenamed(Sitemap: string, OldFilepath: string, NewFilePath: string) {
     const SitemapSettings = settings.GetSitemapSettings(Sitemap);
     const AbsoluteSitemapPath = path.join(GetWorkspaceFolder(), Sitemap);
     const OldUrl = GetWebUrlFromFilepath(SitemapSettings, OldFilepath);
     const NewUrl = GetWebUrlFromFilepath(SitemapSettings, NewFilePath);
-    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath, true);
+    const SitemapWriter = new SitemapXmlWriter(AbsoluteSitemapPath);
+    await SitemapWriter.ParseFile();
 
     // Get the old sitemap item, to be able to abstract data from it
     const OldItem = SitemapWriter.GetItem(OldUrl);
