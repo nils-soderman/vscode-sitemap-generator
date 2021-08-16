@@ -3,6 +3,11 @@ import * as xml2js from 'xml2js';
 
 type ChangeFreqencyTypes = "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
 
+function EnsureTwoDigitString(Number: number) {
+    let ReturnValue = Number.toString();
+    return (ReturnValue.length > 1) ? ReturnValue : "0" + ReturnValue;
+}
+
 class SitemapUrl {
     constructor(
         public Url: string,
@@ -17,13 +22,17 @@ class SitemapUrl {
      */
     ToXMLString(TabCharacter = "\t") {
         let Content = "\n";
+        let DateString = "";
+        
+        if (this.LastMod)
+            DateString = `${this.LastMod?.getFullYear()}-${EnsureTwoDigitString(this.LastMod.getMonth() + 1)}-${EnsureTwoDigitString(this.LastMod.getDate())}`;
 
         // Add all tags
         for (let Item of [
             ["loc", this.Url],
             ["priority", this.Prio?.toFixed(2)],
             ["changefreq", this.ChangeFreq],
-            ["lastmod", this.LastMod?.toLocaleDateString()]
+            ["lastmod", DateString]
         ]) {
             // If a value is undefined, skip adding that tag
             if (Item[1] === undefined)
