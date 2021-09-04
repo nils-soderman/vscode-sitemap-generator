@@ -1,13 +1,13 @@
 # Sitemap Generator (VSCode Extention)
-Automatically generate sitemaps & keep it updated as you add, remove or modify files.
+Automatically generate sitemaps & keep them updated as you add, remove or modify files.
 
 ![Demo](https://github.com/nils-soderman/vscode-sitemap-generator/blob/main/media/demo.jpg?raw=true)
 
 <br>
 
-## Usage
+# Usage
 
-### Generating a new sitemap
+## Generating a new sitemap
 1. Open your website's workspace / folder in VSCode.
 2. Run the command `Sitemap-Generator: New Sitemap`
 3. Select where to save the sitemap, select your prefered protocol and enter your domain name.
@@ -29,10 +29,10 @@ By default the sitemap will automatically be updated as you add, remove or modif
 
 <br>
 
-## Options
+# Options
 
 When a new sitemap is created, a `sitemap-generator.json` file will be created under .vscode in the current workspace.
-This file includes some tweakable settings to make format the sitemap as you want it.
+This file includes some tweakable settings to format the sitemap as you want it.
 
 |             Key             |       Type      |    Default Value        |           Description                                                                        |
 | --------------------------- | --------------- | ----------------------- | -------------------------------------------------------------------------------------------- |
@@ -52,12 +52,25 @@ This file includes some tweakable settings to make format the sitemap as you wan
 
 <br>
 
-## Links
+
+## Additional Info & Examples
+
+### Exclude
+
+The Exclude is expecting a glob pattern.<br>
+Examples:
+* `"MyFolder/*"` - Excludes all files under the 'MyFolder', located under the root
+* `"**/MySubFolders/*"` -  Exclude all files under any folder named 'MySubFolders'
+* `"MyFolder/*.php"` - Exclude all .php files under the 'MyFolder' folder.
+
+<br><br>
+
+# Links
 
 [Github Repository](https://github.com/nils-soderman/vscode-sitemap-generator)
 
 <br>
-Feel free to contact me if you have any questions or feature requests:
+Don't hesitate to contact me if you have any questions or feature requests:
 
 [Personal Website](https://nilssoderman.com)<br>
 [Twitter](https://twitter.com/nilssoderman "@nilssoderman")
