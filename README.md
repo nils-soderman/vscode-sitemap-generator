@@ -42,7 +42,7 @@ This file includes some tweakable settings to format the sitemap as you want it.
 | IncludeExt                  | string[]        | [".html", ".php"]       | List of file extentions to count as urls. e.g. ".html"                                       |
 | Exclude                     | string[]        | []                      | List of glob patterns to be excluded from the sitemap                                        |
 | TagsToInclude               | string[]        | ["priority", "lastmod"] | Tags to be included in the sitemap. Valid values are: "priority", "lastmod", "changefreq"    |
-| DefaultChangeFrequency      | string          | "montly"                | The default value to be added into changefreq xml tags when a new page is added              |
+| DefaultChangeFrequency      | string          | "monthly"                | The default value to be added into changefreq xml tags when a new page is added              |
 | TabCharacters               | string          | "\t"                    | Character(s) to be used as tabs in the generated sitemap                                     |
 | bRemoveFileExtentions       | boolean         | false                   | Remove file extentions from the url                                                          |
 | bIncludeWWW                 | boolean         | true                    | If the url should include "www<span></span>." or not                                         |
